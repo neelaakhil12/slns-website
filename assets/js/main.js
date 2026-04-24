@@ -24,6 +24,40 @@
     document.body.appendChild(fabContainer);
   };
 
+  const buildLegacyPlaceholder = (label) => {
+    const title = (label || "SLNS Destination").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+        <defs>
+          <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0B3C5D" />
+            <stop offset="55%" stop-color="#2c5d7f" />
+            <stop offset="100%" stop-color="#F97316" />
+          </linearGradient>
+        </defs>
+        <rect width="800" height="800" fill="url(#bg)" rx="48" />
+        <circle cx="126" cy="126" r="74" fill="rgba(255,255,255,0.16)" />
+        <circle cx="680" cy="140" r="92" fill="rgba(255,255,255,0.08)" />
+        <circle cx="640" cy="640" r="120" fill="rgba(255,255,255,0.08)" />
+        <text x="72" y="610" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="8">SLNS</text>
+        <text x="72" y="690" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="78" font-weight="800">${title}</text>
+      </svg>
+    `;
+
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+  };
+
+  const fixLegacyImageSources = () => {
+    const legacyImages = document.querySelectorAll('img[src^="image copy"]');
+
+    legacyImages.forEach(img => {
+      const placeholderSrc = buildLegacyPlaceholder(img.alt || "SLNS Destination");
+      img.src = placeholderSrc;
+      img.loading = "lazy";
+      img.decoding = "async";
+    });
+  };
+
   const normalizeHeader = () => {
     const mainHeader = document.getElementById("main-header");
     if (!mainHeader) {
@@ -74,6 +108,7 @@
 
   normalizeHeader();
   ensureFloatingButtons();
+  fixLegacyImageSources();
 
   // Update Year
   const currentYear = new Date().getFullYear();
@@ -250,14 +285,15 @@
         revealObserver.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+  }, { threshold: 0.06, rootMargin: "0px 0px -4% 0px" });
 
   reveals.forEach((el, index) => {
     if (!el.classList.contains("reveal-on-scroll")) el.classList.add("reveal-on-scroll");
     if (!el.classList.contains("reveal-left") && !el.classList.contains("reveal-right") && !el.classList.contains("reveal-up")) {
       el.classList.add(index % 2 === 0 ? "reveal-left" : "reveal-right");
     }
-    el.style.transitionDelay = `${Math.min(index % 4, 3) * 90}ms`;
+    const isSectionWrapper = !!el.matches("main section > div, main form");
+    el.style.transitionDelay = isSectionWrapper ? "0ms" : `${Math.min(index % 3, 2) * 60}ms`;
     revealObserver.observe(el);
   });
 
